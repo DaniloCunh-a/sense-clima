@@ -27,27 +27,19 @@ void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms) {
     // Garante que todas as mensagens de log pendentes sejam enviadas antes de dormir
     uniLogFlushOut(0);
     
-    // Para o estado SLP1, a UART pode permanecer ativa se configurada para wakeup.
-    // Para modos de sono mais profundos, você precisaria desinicializá-la aqui.
-    
-    // Configura o timer AON (Always-On) como a fonte de wakeup.
-    // slpManAonTimerStart(sleep_ms);
-    slpManDeepSlpTimerStart(DEEPSLP_TIMER_ID7, sleep_ms);
+    if (state == SLP_SLP2_STATE) {
+        // Configura o timer de sono profundo (Deep Sleep Timer) como a fonte de wakeup.
+        slpManDeepSlpTimerStart(DEEPSLP_TIMER_ID7, sleep_ms);
 
-    // Entra no estado de sono especificado. A MCU irá parar aqui até um evento de wakeup.
-    // slpManEnterSlp(state);
-    slpManSetPmuSleepMode(true, state, false);
+        // Entra no modo de sono profundo. A execução para aqui.
+        // O dispositivo será reiniciado pelo hardware ao acordar.
+        slpManSetPmuSleepMode(true, state, false);
 
-    // --- A execução continua aqui após o wakeup ---
-
-    // O timer AON é um timer "one-shot" e é parado automaticamente no wakeup.
-
-    // Ao acordar do SLP1, o estado do core é mantido, mas alguns clocks podem precisar
-    // ser restaurados. O código de inicialização (BSP) cuida do básico.
-    // Pode ser necessário reinicializar a UART usada para o printf.
-    extern USART_HandleTypeDef huart1;
-    uint32_t uart_cntrl = (ARM_USART_MODE_ASYNCHRONOUS | ARM_USART_DATA_BITS_8 | ARM_USART_PARITY_NONE | 
-                           ARM_USART_STOP_BITS_1 | ARM_USART_FLOW_CONTROL_NONE);
-    HAL_USART_InitPrint(&huart1, GPR_UART1ClkSel_26M, uart_cntrl, 115200);
+        // O CÓDIGO ABAIXO NUNCA SERÁ ALCANÇADO NO MODO SLP2,
+        // POIS O SISTEMA REINICIA.
+    } else {
+        // Lógica para outros modos de sono (ex: SLP1) pode ser adicionada aqui.
+        printf("Unsupported sleep state for this implementation.\n");
+    }
 }
 /************************ HT Micron Semicondutores S.A *****END OF FILE****/

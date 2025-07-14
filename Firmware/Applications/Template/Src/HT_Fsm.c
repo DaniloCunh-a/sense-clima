@@ -16,6 +16,7 @@
 #include "HT_Fsm.h"
 #include "HT_DHT22.h"
 #include "senseclima.h"
+#include "HT_Sleep.h"
 
 /* Function prototypes  ------------------------------------------------------------------*/
 
@@ -166,6 +167,29 @@ static void HT_FSM_WaitForButtonState(void);
  * \retval none.
  *******************************************************************/
 static void HT_FSM_CheckSocketState(void);
+
+/*!******************************************************************
+ * \fn static void HT_FSM_MQTTPublishDHT22State(void)
+ * \brief Reads the DHT22 sensor, publishes the data via MQTT and
+ * sets the FSM to enter deep sleep.
+ *
+ * \param[in]  none
+ * \param[out] none
+ *
+ * \retval none.
+ *******************************************************************/
+static void HT_FSM_MQTTPublishDHT22State(void);
+
+/*!******************************************************************
+ * \fn static void HT_FSM_EnterDeepSleepState(void)
+ * \brief Enters deep sleep mode for a predefined interval.
+ *
+ * \param[in]  none
+ * \param[out] none
+ *
+ * \retval none.
+ *******************************************************************/
+static void HT_FSM_EnterDeepSleepState(void);
 /* ---------------------------------------------------------------------------------------*/
 
 MQTTClient mqttClient;
@@ -322,6 +346,30 @@ static void HT_FSM_SubscribeHandleState(void) {
     state = HT_WAIT_FOR_BUTTON_STATE;
 }
 
+static void HT_FSM_MQTTPublishDHT22State(void) {
+    // Chama a função que lê e publica os dados do sensor
+    SenseClima_PublishDHT22State();
+
+    // Define o próximo estado como entrar em sono profundo
+    state = HT_ENTER_DEEP_SLEEP_STATE;
+}
+
+static void HT_FSM_EnterDeepSleepState(void) {
+    const uint32_t sleep_duration_ms = 30000;
+    printf("Entering deep sleep for %lu ms...\n", sleep_duration_ms);
+    
+    // Configura o modo de sono profundo. A entrada real no sono ocorrerá
+    // quando a tarefa idle do RTOS for executada.
+    HT_Sleep_EnterSleep(SLP_SLP2_STATE, sleep_duration_ms);
+
+    // Bloqueia esta tarefa em um loop infinito para permitir que o sistema
+    // entre no modo de baixo consumo (idle) e, consequentemente, no sono profundo.
+    // O dispositivo será reiniciado pelo timer de wakeup e nunca sairá deste loop.
+    while(1) {
+        osDelay(1000);
+    }
+}
+
 static void HT_FSM_MQTTPublishState(void) {
 
     // Publishes payload defined from the button color with QOS 0 and not retain message
@@ -460,6 +508,9 @@ void HT_Fsm(void) {
                 break;
             case HT_MQTT_PUBLISH_DHT22_STATE:
                 HT_FSM_MQTTPublishDHT22State();
+                break;
+            case HT_ENTER_DEEP_SLEEP_STATE:
+                HT_FSM_EnterDeepSleepState();
                 break;
             default:
                 break;

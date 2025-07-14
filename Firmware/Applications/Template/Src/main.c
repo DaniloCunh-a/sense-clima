@@ -16,6 +16,7 @@
 #include "main.h"
 #include "ps_lib_api.h"
 #include "flash_qcx212.h"
+#include "time.h"
 
 
 static StaticTask_t initTask;
@@ -28,6 +29,10 @@ static NmAtiSyncRet gNetworkInfo;
 static uint8_t mqttEpSlpHandler = 0xff;
 
 static volatile uint8_t simReady = 0;
+
+typedef struct {
+    time_t sleep_start_time;
+} DebugTimestamp_t;
 
 static uint32_t uart_cntrl = (ARM_USART_MODE_ASYNCHRONOUS | ARM_USART_DATA_BITS_8 | ARM_USART_PARITY_NONE | 
                                 ARM_USART_STOP_BITS_1 | ARM_USART_FLOW_CONTROL_NONE);
@@ -129,6 +134,25 @@ static void HT_MQTTExampleTask(void *arg){
     uint8_t psmMode = 0, actType = 0;
     uint16_t tac = 0;
     uint32_t tauTime = 0, activeTime = 0, cellID = 0, nwEdrxValueMs = 0, nwPtwMs = 0;
+
+    // --- Timestamping after wakeup ---
+    // Esta seção é executada logo após o dispositivo acordar do sono profundo (que causa um reset).
+    DebugTimestamp_t *nv_timestamp = (DebugTimestamp_t *)slpManGetUsrNVMem();
+    if (nv_timestamp != NULL && nv_timestamp->sleep_start_time != 0) {
+        time_t wakeup_time = OsaSystemTimeReadSecs();
+        time_t sleep_start = nv_timestamp->sleep_start_time;
+        
+        // Limpa o timestamp na memória não volátil para evitar reimpressão em caso de reset acidental.
+        nv_timestamp->sleep_start_time = 0;
+        slpManUpdateUserNVMem();
+
+        // Apenas imprime se o tempo de despertar for maior, para evitar logs com valores inválidos.
+        if (wakeup_time > sleep_start) {
+            printf("Woke up at timestamp: %lu\n", (unsigned long)wakeup_time);
+            printf("Actual sleep duration: %lu seconds\n", (unsigned long)(wakeup_time - sleep_start));
+        }
+    }
+    // --- Fim do timestamping ---
 
     eventCallbackMessage_t *queueItem = NULL;
 
