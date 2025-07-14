@@ -22,67 +22,40 @@
 */
 
 /*!
- * \file main.h
- * \brief Main file of HTNB32L-XXX MQTT Example. 
+ * \file HT_BSP_Custom.h
+ * \brief Custom settings for iMCP HTNB32L-XXX. 
   * \author HT Micron Advanced R&D,
  *         Hêndrick Bataglin Gonçalves, Christian Roberto Lehmen,  Matheus da Silva Zorzeto, Felipe Kalinski Ferreira,
  *         Leandro Borges, Mauricio Carlotto Ribeiro, Henrique Kuhn, Cleber Haack, Eduardo Mendel
  *         Gleiser Alvarez Arrojo
  * 
  * \link https://github.com/htmicron
- * \version 1.0
- * \date February 23, 2023
+ * \version 0.1
+ * \date March 15, 2023
  */
 
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#ifndef __HT_SLEEP_H__
+#define __HT_SLEEP_H__
 
-#include "htnb32lxxx_hal_usart.h"
-#include "HT_Fsm.h"
-#include "HT_GPIO_Api.h"
-
-#include "bsp.h"
-#include "HT_BSP_Custom.h"
-#include "osasys.h"
-#include "ostask.h"
-#include "queue.h"
-#include "ps_event_callback.h"
-#include "cmisim.h"
-#include "cmimm.h"
-#include "cmips.h"
-#include "sockets.h"
-#include "psifevent.h"
-#include "ps_lib_api.h"
-#include "lwip/netdb.h"
-#include "debug_log.h"
+#include "main.h"
 #include "slpman_qcx212.h"
-#include "MQTTClient.h"
-#include "plat_config.h"
-#include "debug_trace.h"
-#include "hal_uart.h"
-#include "HT_MQTT_Api.h"
-#include "flash_qcx212.h"
-#include "flash_qcx212_rt.h"
-#include "slpman_qcx212.h"
-#include "FreeRTOS.h"
-#include "netmgr.h"
-#include <stdio.h>
+#include "pmu_qcx212.h"
 
-/* Defines  ------------------------------------------------------------------*/
+/*!******************************************************************
+ * \fn void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms)
+ * \brief Enters a specified sleep state for a certain duration.
+ *
+ * This function configures the AON timer as a wakeup source and
+ * then enters the specified sleep mode. Execution resumes after
+ * the timer expires.
+ *
+ * \param[in]  state      The sleep state to enter (e.g., SLP_SLP1_STATE).
+ * \param[in]  sleep_ms   Duration to sleep in milliseconds.
+ *
+ * \retval none
+ *******************************************************************/
+void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms);
 
-#define QMSG_ID_BASE               (0x160) 
-#define QMSG_ID_NW_IPV4_READY      (QMSG_ID_BASE)
-#define QMSG_ID_NW_IPV6_READY      (QMSG_ID_BASE + 1)
-#define QMSG_ID_NW_IPV4_6_READY    (QMSG_ID_BASE + 2)
-#define QMSG_ID_NW_DISCONNECT      (QMSG_ID_BASE + 3)
-#define QMSG_ID_SOCK_SENDPKG       (QMSG_ID_BASE + 4)
-#define QMSG_ID_SOCK_RECVPKG       (QMSG_ID_BASE + 5)
-
-#define INIT_TASK_STACK_SIZE    (1024*6)
-#define RINGBUF_READY_FLAG      (0x06)
-#define APP_EVENT_QUEUE_SIZE    (10)
-#define MAX_PACKET_SIZE         (256)
-
-#endif /* __MAIN_H__ */
+#endif /*__HT_SLEEP_H__*/
 
 /************************ HT Micron Semicondutores S.A *****END OF FILE****/

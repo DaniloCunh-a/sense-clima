@@ -42,7 +42,7 @@
 #include "MQTTClient.h"
 #include "uart_qcx212.h"
 
-#define MQTT_TLS_ENABLE 1
+#define MQTT_TLS_ENABLE 0
 
 #define MQTT_GENERAL_TIMEOUT 60000
 

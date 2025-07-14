@@ -22,67 +22,43 @@
 */
 
 /*!
- * \file main.h
- * \brief Main file of HTNB32L-XXX MQTT Example. 
+ * \file HT_LED_Task.h
+ * \brief LED tasks functions. 
   * \author HT Micron Advanced R&D,
  *         Hêndrick Bataglin Gonçalves, Christian Roberto Lehmen,  Matheus da Silva Zorzeto, Felipe Kalinski Ferreira,
  *         Leandro Borges, Mauricio Carlotto Ribeiro, Henrique Kuhn, Cleber Haack, Eduardo Mendel
  *         Gleiser Alvarez Arrojo
  * 
  * \link https://github.com/htmicron
- * \version 1.0
+ * \version 0.1
  * \date February 23, 2023
  */
 
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#ifndef __HT_LED_TASK_H__
+#define __HT_LED_TASK_H__
 
-#include "htnb32lxxx_hal_usart.h"
-#include "HT_Fsm.h"
-#include "HT_GPIO_Api.h"
-
-#include "bsp.h"
-#include "HT_BSP_Custom.h"
-#include "osasys.h"
-#include "ostask.h"
-#include "queue.h"
-#include "ps_event_callback.h"
-#include "cmisim.h"
-#include "cmimm.h"
-#include "cmips.h"
-#include "sockets.h"
-#include "psifevent.h"
-#include "ps_lib_api.h"
-#include "lwip/netdb.h"
-#include "debug_log.h"
-#include "slpman_qcx212.h"
-#include "MQTTClient.h"
-#include "plat_config.h"
-#include "debug_trace.h"
-#include "hal_uart.h"
-#include "HT_MQTT_Api.h"
-#include "flash_qcx212.h"
-#include "flash_qcx212_rt.h"
-#include "slpman_qcx212.h"
-#include "FreeRTOS.h"
-#include "netmgr.h"
-#include <stdio.h>
+#include "main.h"
 
 /* Defines  ------------------------------------------------------------------*/
 
-#define QMSG_ID_BASE               (0x160) 
-#define QMSG_ID_NW_IPV4_READY      (QMSG_ID_BASE)
-#define QMSG_ID_NW_IPV6_READY      (QMSG_ID_BASE + 1)
-#define QMSG_ID_NW_IPV4_6_READY    (QMSG_ID_BASE + 2)
-#define QMSG_ID_NW_DISCONNECT      (QMSG_ID_BASE + 3)
-#define QMSG_ID_SOCK_SENDPKG       (QMSG_ID_BASE + 4)
-#define QMSG_ID_SOCK_RECVPKG       (QMSG_ID_BASE + 5)
+#define LED_TASK_STACK_SIZE    (1024*4)                     /**</ Bytes that will be allocated for this task. */
 
-#define INIT_TASK_STACK_SIZE    (1024*6)
-#define RINGBUF_READY_FLAG      (0x06)
-#define APP_EVENT_QUEUE_SIZE    (10)
-#define MAX_PACKET_SIZE         (256)
+#define GREEN_LED_DELAY 1000                                /**</ Led blinking delay. */
 
-#endif /* __MAIN_H__ */
+/* Functions ------------------------------------------------------------------*/
+
+/*!******************************************************************
+ * \fn void HT_LED_GreenLedTask(void *arg)
+ * \brief Initialize a task that will control the green led. In this
+ * application, the green led means the device is connected.
+ *
+ * \param[in]  void *arg          Parameters that are supposed to be used in this task.
+ * \param[out] none
+ *
+ * \retval none
+ *******************************************************************/
+void HT_LED_GreenLedTask(void *arg);
+
+#endif /*__HT_LED_TASK_H__*/
 
 /************************ HT Micron Semicondutores S.A *****END OF FILE****/

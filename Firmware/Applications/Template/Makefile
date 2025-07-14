@@ -15,18 +15,29 @@ HT_USART_API_ENABLE := y
 HT_SPI_API_ENABLE := n
 HT_I2C_API_ENABLE := n
 DRIVER_USART_ENABLE = y
+DRIVER_SLPMAN_ENABLE = y
 HT_DEFAULT_LINKER_FILE = y
 
 HT_LIBRARY_MQTT_ENABLE = y
 HT_LIBRARY_CJSON_ENABLE = y
 UART_UNILOG_ENABLE = y
 
+
+
+
+
 AZURE_IOT_ENABLE = y
 
 CFLAGS_INC        +=  -I Inc
 
 obj-y             += Src/main.o \
-                     Src/HT_BSP_Custom.o
+                     Src/HT_BSP_Custom.o \
+                     Src/HT_GPIO_Api.o \
+                     Src/HT_LED_Task.o \
+                     Src/HT_MQTT_Api.o \
+                     Src/HT_Fsm.o \
+                     Src/HT_Sleep.o \
+                     Src/HT_DHT22.o \
+                     Src/senseclima.o
 
 include $(TOP)/SDK/PLAT/tools/scripts/Makefile.rules
-
