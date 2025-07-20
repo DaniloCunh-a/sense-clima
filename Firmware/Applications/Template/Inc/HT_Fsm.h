@@ -42,20 +42,20 @@
 #include "HT_MQTT_Api.h"
 #include "MQTTFreeRTOS.h"
 #include "bsp.h"
-#include "HT_GPIO_Api.h"
+// Movido HT_GPIO_Api.h para depois das definições de tipos
 #include "cmsis_os2.h"
 #include "MQTTClient.h"
-#include "HT_LED_Task.h"
-#include "HT_DHT22.h"
+#include "HT_LED_Task.h"  // Para a função HT_LED_GreenLedTask
 
 /* Defines  ------------------------------------------------------------------*/
+#define LED_TASK_STACK_SIZE  (1024*4) 
 #define HT_MQTT_KEEP_ALIVE_INTERVAL 240                   /**</ Keep alive interval in ms. */
 #define HT_MQTT_VERSION 4                                 /**</ MQTT protocol version. */
 
 #if MQTT_TLS_ENABLE == 1
 #define HT_MQTT_PORT   8883                               /**</ MQTT TCP TLS port. */
 #else
-#define HT_MQTT_PORT   19978//1883                               /**</ MQTT TCP port. */
+#define HT_MQTT_PORT  10773 //1883                               /**</ MQTT TCP port. */
 #endif
 
 #define HT_MQTT_SEND_TIMEOUT 60000                        /**</ MQTT TX timeout. */
@@ -86,8 +86,7 @@ typedef enum {
     HT_CHECK_SOCKET_STATE,
     HT_SUBSCRIBE_HANDLE_STATE,
     HT_MQTT_PUBLISH_DHT22_STATE,
-    HT_ENTER_DEEP_SLEEP_STATE,
-    HT_FSM_MAX_STATE
+    HT_ENTER_DEEP_SLEEP_STATE
 } HT_FSM_States;
 
 /**
@@ -100,7 +99,22 @@ typedef enum {
     HT_UNDEFINED
 } HT_Button;
 
+// Agora podemos incluir HT_GPIO_Api.h com segurança
+#include "HT_GPIO_Api.h"
+
 /* Functions ------------------------------------------------------------------*/
+
+/*!******************************************************************
+ * \fn HT_ConnectionStatus HT_FSM_MQTTConnect(void)
+ * \brief Connects the device to the MQTT Broker and returns the connection
+ * status.
+ *
+ * \param[in]  none
+ * \param[out] none
+ *
+ * \retval Connection status.
+ *******************************************************************/
+HT_ConnectionStatus HT_FSM_MQTTConnect(void);
 
 /*!******************************************************************
  * \fn void HT_FSM_SetSubscribeBuff(uint8_t *buff, uint8_t payload_len)

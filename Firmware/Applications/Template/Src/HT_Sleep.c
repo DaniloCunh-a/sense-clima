@@ -17,29 +17,55 @@
 #include "slpman_qcx212.h"
 #include "htnb32lxxx_hal_usart.h"
 #include "debug_log.h"
+#include "ps_lib_api.h"
 
-// Esta é uma função de sleep simplificada. Em um cenário real,
-// você precisaria gerenciar cuidadosamente quais periféricos desinicializar
-// antes de dormir e reinicializar ao acordar para economizar o máximo de energia.
+// Callbacks for sleep mode
+static void beforeHibernateCb(void *pdata, slpManLpState state) {
+    printf("[Callback] Antes de Hibernate\n");
+}
+
+static void afterHibernateCb(void *pdata, slpManLpState state) {
+    printf("[Callback] Acordou de Hibernate\n");
+}
 
 void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms) {
+    static uint8_t voteHandle = 0xFF;
     
     // Garante que todas as mensagens de log pendentes sejam enviadas antes de dormir
     uniLogFlushOut(0);
     
-    if (state == SLP_SLP2_STATE) {
-        // Configura o timer de sono profundo (Deep Sleep Timer) como a fonte de wakeup.
-        slpManDeepSlpTimerStart(DEEPSLP_TIMER_ID7, sleep_ms);
-
-        // Entra no modo de sono profundo. A execução para aqui.
-        // O dispositivo será reiniciado pelo hardware ao acordar.
-        slpManSetPmuSleepMode(true, state, false);
-
-        // O CÓDIGO ABAIXO NUNCA SERÁ ALCANÇADO NO MODO SLP2,
-        // POIS O SISTEMA REINICIA.
-    } else {
-        // Lógica para outros modos de sono (ex: SLP1) pode ser adicionada aqui.
-        printf("Unsupported sleep state for this implementation.\n");
+    printf("\n=== Entrando em Modo Sono %d por %lu ms ===\n", state, sleep_ms);
+    
+    // Desativa funções de celular e SIM para economizar energia
+    appSetCFUN(0);
+    appSetEcSIMSleepSync(1);
+    
+    // Primeiro, configura o modo de sono
+    // Este comando é importante para inicializar o sistema para o sono
+    slpManSetPmuSleepMode(true, state, false);
+    
+    // Configura o gerenciamento de sleep
+    if (voteHandle == 0xFF) {
+        slpManApplyPlatVoteHandle("SLEEP_TEST", &voteHandle);
     }
+    
+    // Registra callbacks para hibernação
+    slpManRegisterUsrdefinedBackupCb(beforeHibernateCb, NULL, SLPMAN_HIBERNATE_STATE);
+    slpManRegisterUsrdefinedRestoreCb(afterHibernateCb, NULL, SLPMAN_HIBERNATE_STATE);
+    
+    // Habilita o modo de sono
+    slpManPlatVoteEnableSleep(voteHandle, state);
+    
+    // Configura o timer de sono como fonte de wakeup
+    slpManDeepSlpTimerStart(DEEPSLP_TIMER_ID7, sleep_ms);
+    
+    // Espera passiva — o sistema deve entrar em sono automaticamente
+    // Esta é a abordagem usada no exemplo de referência
+    while (1) {
+        printf("Hibernando...\n");
+        osDelay(2000);  // após o tempo, sistema acorda e mensagens são exibidas
+    }
+    
+    // O código abaixo nunca será executado
 }
 /************************ HT Micron Semicondutores S.A *****END OF FILE****/

@@ -18,6 +18,9 @@
 #include "senseclima.h"
 #include "HT_Sleep.h"
 
+/* Declarações externas ------------------------------------------------------------------*/
+extern void HT_LED_GreenLedTask(void *arg);
+
 /* Function prototypes  ------------------------------------------------------------------*/
 
 /*!******************************************************************
@@ -80,7 +83,7 @@ void HT_FSM_UpdateUserLedState(void);
 static void HT_FSM_LedStatus(HT_Led_Type led, uint16_t state);
 
 /*!******************************************************************
- * \fn static HT_ConnectionStatus HT_FSM_MQTTConnect(void)
+ * \fn HT_ConnectionStatus HT_FSM_MQTTConnect(void)
  * \brief Connects the device to the MQTT Broker and returns the connection
  * status.
  *
@@ -89,7 +92,7 @@ static void HT_FSM_LedStatus(HT_Led_Type led, uint16_t state);
  *
  * \retval Connection status.
  *******************************************************************/
-static HT_ConnectionStatus HT_FSM_MQTTConnect(void);
+HT_ConnectionStatus HT_FSM_MQTTConnect(void);
 
 /*!******************************************************************
  * \fn static void HT_FSM_SubscribeHandleState(void)
@@ -190,6 +193,7 @@ static void HT_FSM_MQTTPublishDHT22State(void);
  * \retval none.
  *******************************************************************/
 static void HT_FSM_EnterDeepSleepState(void);
+
 /* ---------------------------------------------------------------------------------------*/
 
 MQTTClient mqttClient;
@@ -316,7 +320,7 @@ static void HT_FSM_LedStatus(HT_Led_Type led, uint16_t state) {
     }
 }
 
-static HT_ConnectionStatus HT_FSM_MQTTConnect(void) {
+HT_ConnectionStatus HT_FSM_MQTTConnect(void) {
 
     // Connect to MQTT Broker using client, network and parameters needded. 
     if(HT_MQTT_Connect(&mqttClient, &mqttNetwork, (char *)addr, HT_MQTT_PORT, HT_MQTT_SEND_TIMEOUT, HT_MQTT_RECEIVE_TIMEOUT,
@@ -355,19 +359,34 @@ static void HT_FSM_MQTTPublishDHT22State(void) {
 }
 
 static void HT_FSM_EnterDeepSleepState(void) {
-    const uint32_t sleep_duration_ms = 30000;
-    printf("Entering deep sleep for %lu ms...\n", sleep_duration_ms);
+    // Obtém o intervalo de sono atual (configurado via MQTT ou valor padrão)
+    const uint32_t sleep_duration_ms = SenseClima_GetSleepInterval();
+    printf("\n=== PREPARANDO PARA HIBERNACAO ===\n");
+    printf("Intervalo de sono configurado: %lu ms (%lu segundos)\n", 
+           sleep_duration_ms, sleep_duration_ms / 1000);
     
-    // Configura o modo de sono profundo. A entrada real no sono ocorrerá
-    // quando a tarefa idle do RTOS for executada.
-    HT_Sleep_EnterSleep(SLP_SLP2_STATE, sleep_duration_ms);
-
-    // Bloqueia esta tarefa em um loop infinito para permitir que o sistema
-    // entre no modo de baixo consumo (idle) e, consequentemente, no sono profundo.
-    // O dispositivo será reiniciado pelo timer de wakeup e nunca sairá deste loop.
-    while(1) {
-        osDelay(1000);
+    // Desconecta do MQTT para limpar recursos
+    if (mqttClient.isconnected) {
+        printf("Desconectando do MQTT antes de dormir...\n");
+        MQTTDisconnect(&mqttClient);
     }
+    
+    // Desativa todos os periféricos que possam impedir o sono profundo
+    printf("Desativando periféricos antes do sono profundo...\n");
+    
+    // Desativa LEDs
+    HT_FSM_LedStatus(HT_BLUE_LED, LED_OFF);
+    HT_FSM_LedStatus(HT_WHITE_LED, LED_OFF);
+    HT_FSM_LedStatus(HT_GREEN_LED, LED_OFF);
+
+    // Aguarda um momento para garantir que todas as operações sejam concluídas
+    osDelay(500);
+    
+    // Entra no modo de hibernação - esta função não retorna
+    printf("Entrando em hibernação agora...\n");
+    HT_Sleep_EnterSleep(SLP_HIB_STATE, sleep_duration_ms);
+    
+    // Este código nunca será alcançado
 }
 
 static void HT_FSM_MQTTPublishState(void) {
@@ -451,37 +470,80 @@ static void HT_FSM_CheckSocketState(void) {
     subscribe_callback = 0;
 }
 
-void HT_Fsm(void) {
+// Função removida: CheckForIntervalMessages
 
-    // Initialize MQTT Client and Connect to MQTT Broker defined in global variables
-    if(HT_FSM_MQTTConnect() == HT_NOT_CONNECTED) {
-        printf("\n MQTT Connection Error!\n");
-        while(1);
+void HT_Fsm(void) {
+    int mqtt_connect_attempts = 0;
+    const int MAX_MQTT_CONNECT_ATTEMPTS = 3;
+    bool mqtt_connected = false;
+
+    // Inicializa o sensor DHT22
+    DHT22_Init();
+    
+    // Inicializa o módulo SenseClima (carrega configurações da NVRAM)
+    SenseClima_Init();
+    
+    printf("Intervalo de sono configurado: %lu ms\n", SenseClima_GetSleepInterval());
+
+    // Loop para tentar conectar ao MQTT até o número máximo de tentativas
+    while (mqtt_connect_attempts < MAX_MQTT_CONNECT_ATTEMPTS && !mqtt_connected) {
+        printf("\nTentativa de conexao MQTT %d de %d...\n", mqtt_connect_attempts + 1, MAX_MQTT_CONNECT_ATTEMPTS);
+        
+        // Tenta conectar ao MQTT
+        if (HT_FSM_MQTTConnect() == HT_CONNECTED) {
+            mqtt_connected = true;
+            printf("MQTT conectado com sucesso!\n");
+        } else {
+            mqtt_connect_attempts++;
+            printf("Falha na conexão MQTT (tentativa %d de %d)\n", mqtt_connect_attempts, MAX_MQTT_CONNECT_ATTEMPTS);
+            
+            if (mqtt_connect_attempts < MAX_MQTT_CONNECT_ATTEMPTS) {
+                // Aguarda antes de tentar novamente
+                printf("Aguardando 5 segundos antes da proxima tentativa...\n");
+                osDelay(5000);
+            }
+        }
     }
 
+    // Se não conseguiu conectar após todas as tentativas, entra em modo de hibernação
+    if (!mqtt_connected) {
+        printf("Nao foi possível conectar ao MQTT apos %d tentativas.\n", MAX_MQTT_CONNECT_ATTEMPTS);
+        printf("Entrando em modo de hibernação e tentando novamente mais tarde...\n");
+        
+        // Desativa LEDs antes de dormir
+        HT_FSM_LedStatus(HT_BLUE_LED, LED_OFF);
+        HT_FSM_LedStatus(HT_WHITE_LED, LED_OFF);
+        HT_FSM_LedStatus(HT_GREEN_LED, LED_OFF);
+        
+        // Entra em hibernação usando o intervalo padrão ou configurado
+        HT_Sleep_EnterSleep(SLP_HIB_STATE, SenseClima_GetSleepInterval());
+        
+        // Este código nunca será alcançado
+        return;
+    }
+
+    // Se chegou aqui, a conexão MQTT foi bem-sucedida
     // Init irqn after connection
     HT_GPIO_ButtonInit();
-    
-    // Get led status from the Python software
-    //HT_FSM_UpdateUserLedState();
 
     // Led to sinalize connection stablished
     HT_LED_GreenLedTask(NULL);
 
     printf("Executing fsm...\n");
 
-    DHT22_Init();
+    // Subscreve ao tópico de intervalo
+    printf("Subscribing to interval topic: '%s' with QoS 1\n", INTERVAL_TOPIC);
+    HT_MQTT_Subscribe(&mqttClient, INTERVAL_TOPIC, QOS1);
+    printf("Subscription request sent for interval topic\n");
 
     // Usa o tick count do FreeRTOS para um controle de tempo mais preciso.
     TickType_t last_dht_read_time = xTaskGetTickCount();
     const TickType_t dht_read_interval = pdMS_TO_TICKS(30000); // 30 segundos
 
+    // Inicia imediatamente com a leitura do sensor e publicação
+    state = HT_MQTT_PUBLISH_DHT22_STATE;
+
     while (1) {
-        // Verifica se já passou o tempo para ler o sensor DHT22.
-        if ((xTaskGetTickCount() - last_dht_read_time) >= dht_read_interval) {
-            state = HT_MQTT_PUBLISH_DHT22_STATE;
-            last_dht_read_time = xTaskGetTickCount(); // Reinicia o contador de tempo.
-        }
         switch (state) {
             case HT_CHECK_SOCKET_STATE:
                 // Check if some message arrived
@@ -490,6 +552,11 @@ void HT_Fsm(void) {
             case HT_WAIT_FOR_BUTTON_STATE:
                 // Check if some button was pressed
                 HT_FSM_WaitForButtonState();
+                // Verifica se já passou o tempo para ler o sensor DHT22.
+                if ((xTaskGetTickCount() - last_dht_read_time) >= dht_read_interval) {
+                    state = HT_MQTT_PUBLISH_DHT22_STATE;
+                    last_dht_read_time = xTaskGetTickCount(); // Reinicia o contador de tempo.
+                }
                 break;
             case HT_PUSH_BUTTON_HANDLE_STATE:
                 // Defines which button was pressed

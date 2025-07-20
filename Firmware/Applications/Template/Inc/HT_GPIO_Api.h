@@ -41,7 +41,7 @@
 #include "main.h"
 #include "pad_qcx212.h"
 #include "gpio_qcx212.h"
-#include "HT_Fsm.h"
+// Removendo a inclusão de HT_Fsm.h para evitar dependência circular
 
 /* Defines  ------------------------------------------------------------------*/
 

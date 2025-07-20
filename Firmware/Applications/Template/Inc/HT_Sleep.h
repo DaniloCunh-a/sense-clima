@@ -41,6 +41,9 @@
 #include "slpman_qcx212.h"
 #include "pmu_qcx212.h"
 
+// Timer ID para o deep sleep
+#define DEEPSLP_TIMER_ID7 7
+
 /*!******************************************************************
  * \fn void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms)
  * \brief Enters a specified sleep state for a certain duration.
