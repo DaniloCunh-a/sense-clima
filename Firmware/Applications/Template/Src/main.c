@@ -169,8 +169,11 @@ static void HT_MQTTExampleTask(void *arg){
     HT_TRACE(UNILOG_MQTT, mqttAppTask1, P_INFO, 0, "first time run mqtt example");
 
     HAL_USART_InitPrint(&huart1, GPR_UART1ClkSel_26M, uart_cntrl, 115200);
-    printf("CURSO HANA - PROJETO FINAL - MQTT!  DANILO CUNHA \n");
-    printf("Trying to connect...\n");
+    printf("\n========================================\n");
+    printf("CURSO HANA - PROJETO FINAL - MQTT\n");
+    printf("DANILO CUNHA - SENSE CLIMA\n");
+    printf("========================================\n\n");
+    printf("Iniciando conexao...\n");
     // while (1) {
     //     DHT22_Init();
     //     HT_FSM_MQTTPublishDHT22State();

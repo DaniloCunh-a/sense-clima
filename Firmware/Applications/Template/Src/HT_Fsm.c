@@ -18,7 +18,7 @@
 #include "senseclima.h"
 #include "HT_Sleep.h"
 
-/* Declarações externas ------------------------------------------------------------------*/
+/* Declaracoes externas ------------------------------------------------------------------*/
 extern void HT_LED_GreenLedTask(void *arg);
 
 /* Function prototypes  ------------------------------------------------------------------*/
@@ -209,7 +209,7 @@ static const char username[] = {""};
 static const char password[] = {""};
 
 //MQTT broker host address
-static const char addr[] = {"0.tcp.sa.ngrok.io"};//{"131.255.82.115"};
+static const char addr[] = {"131.255.82.115"}; //{"0.tcp.sa.ngrok.io"};//;
 static char topic[25] = {0};
 
 // Blue button topic where the digital twin will transmit its messages.
@@ -292,7 +292,7 @@ void HT_FSM_UpdateUserLedState(void) {
     HT_MQTT_Subscribe(&mqttClient, topic_whitebutton_sw, QOS0);
 
     HT_Yield_Thread(NULL);
-    printf("Initial subscriptions sent. FSM will handle responses.\n");
+    printf("Inscricoes iniciais enviadas. FSM processara as respostas.\n");
 
     // REMOVED: Blocking 'while(!subscribe_callback)' loop.
     // The FSM will now proceed to its main loop and handle incoming
@@ -359,10 +359,10 @@ static void HT_FSM_MQTTPublishDHT22State(void) {
 }
 
 static void HT_FSM_EnterDeepSleepState(void) {
-    // Obtém o intervalo de sono atual (configurado via MQTT ou valor padrão)
+    // Obtem o intervalo de sono atual (configurado via MQTT ou valor padrao)
     const uint32_t sleep_duration_ms = SenseClima_GetSleepInterval();
     printf("\n=== PREPARANDO PARA HIBERNACAO ===\n");
-    printf("Intervalo de sono configurado: %lu ms (%lu segundos)\n", 
+    printf("Intervalo configurado: %lu ms (%lu segundos)\n", 
            sleep_duration_ms, sleep_duration_ms / 1000);
     
     // Desconecta do MQTT para limpar recursos
@@ -371,28 +371,28 @@ static void HT_FSM_EnterDeepSleepState(void) {
         MQTTDisconnect(&mqttClient);
     }
     
-    // Desativa todos os periféricos que possam impedir o sono profundo
-    printf("Desativando periféricos antes do sono profundo...\n");
+    // Desativa todos os perifericos que possam impedir o sono profundo
+    printf("Desativando perifericos...\n");
     
     // Desativa LEDs
     HT_FSM_LedStatus(HT_BLUE_LED, LED_OFF);
     HT_FSM_LedStatus(HT_WHITE_LED, LED_OFF);
     HT_FSM_LedStatus(HT_GREEN_LED, LED_OFF);
 
-    // Aguarda um momento para garantir que todas as operações sejam concluídas
+    // Aguarda um momento para garantir que todas as operacoes sejam concluidas
     osDelay(500);
     
-    // Entra no modo de hibernação - esta função não retorna
-    printf("Entrando em hibernação agora...\n");
+    // Entra no modo de hibernacao - esta funcao nao retorna
+    printf("Entrando em hibernacao...\n");
     HT_Sleep_EnterSleep(SLP_HIB_STATE, sleep_duration_ms);
     
-    // Este código nunca será alcançado
+    // Este codigo nunca sera alcancado
 }
 
 static void HT_FSM_MQTTPublishState(void) {
 
     // Publishes payload defined from the button color with QOS 0 and not retain message
-    printf("Publishing...\n");
+    printf("Publicando...\n");
     HT_MQTT_Publish(&mqttClient, (char *)topic, mqtt_payload, strlen((char *)mqtt_payload), QOS0, 0, 0, 0);
 
     osDelay(500);
@@ -406,11 +406,11 @@ static void HT_FSM_MQTTPublishState(void) {
 static void HT_FSM_MQTTSubscribeState(void) {
     
     // Subscribe to defined topic with QOS 0
-    printf("Subscribing...\n");
+    printf("Inscrevendo nos topicos...\n");
     HT_MQTT_Subscribe(&mqttClient, topic_bluebutton_sw, QOS0);
     HT_MQTT_Subscribe(&mqttClient, topic_whitebutton_sw, QOS0);
 
-    printf("Subscribe done!\n");
+    printf("Inscricao concluida!\n");
     
     // Change state to wait for button interruption
     state = HT_WAIT_FOR_BUTTON_STATE;
@@ -421,7 +421,7 @@ static void HT_FSM_PushButtonHandleState(void) {
     // Turns on led and write payload according to the color of the pressed button
     switch (button_color) {
     case HT_BLUE_BUTTON:
-        printf("Blue button pressed!\n");
+        printf("Botao AZUL pressionado!\n");
         
         blue_button_state ^= 1;
         HT_FSM_LedStatus(HT_BLUE_LED, blue_button_state ? LED_ON : LED_OFF);
@@ -435,7 +435,7 @@ static void HT_FSM_PushButtonHandleState(void) {
         state = HT_MQTT_PUBLISH_STATE;
         break;
     case HT_WHITE_BUTTON:
-        printf("White button pressed!\n");
+        printf("Botao BRANCO pressionado!\n");
         
         white_button_state ^= 1;
         HT_FSM_LedStatus(HT_WHITE_LED, white_button_state ? LED_ON : LED_OFF);
@@ -450,7 +450,7 @@ static void HT_FSM_PushButtonHandleState(void) {
         break;
     // Case something not expected happened, print error and change state to wait for button interruption
     case HT_UNDEFINED:
-        printf("ERROR! Undefined button color!\n");
+        printf("ERRO! Cor do botao indefinida!\n");
         state = HT_WAIT_FOR_BUTTON_STATE;
         break;
     }    
@@ -483,7 +483,7 @@ void HT_Fsm(void) {
     // Inicializa o módulo SenseClima (carrega configurações da NVRAM)
     SenseClima_Init();
     
-    printf("Intervalo de sono configurado: %lu ms\n", SenseClima_GetSleepInterval());
+    printf("Intervalo de sono: %lu ms\n", SenseClima_GetSleepInterval());
 
     // Loop para tentar conectar ao MQTT até o número máximo de tentativas
     while (mqtt_connect_attempts < MAX_MQTT_CONNECT_ATTEMPTS && !mqtt_connected) {
@@ -495,11 +495,11 @@ void HT_Fsm(void) {
             printf("MQTT conectado com sucesso!\n");
         } else {
             mqtt_connect_attempts++;
-            printf("Falha na conexão MQTT (tentativa %d de %d)\n", mqtt_connect_attempts, MAX_MQTT_CONNECT_ATTEMPTS);
+            printf("Falha na conexao MQTT (tentativa %d de %d)\n", mqtt_connect_attempts, MAX_MQTT_CONNECT_ATTEMPTS);
             
             if (mqtt_connect_attempts < MAX_MQTT_CONNECT_ATTEMPTS) {
                 // Aguarda antes de tentar novamente
-                printf("Aguardando 5 segundos antes da proxima tentativa...\n");
+                printf("Aguardando 5 segundos...\n");
                 osDelay(5000);
             }
         }
@@ -507,8 +507,8 @@ void HT_Fsm(void) {
 
     // Se não conseguiu conectar após todas as tentativas, entra em modo de hibernação
     if (!mqtt_connected) {
-        printf("Nao foi possível conectar ao MQTT apos %d tentativas.\n", MAX_MQTT_CONNECT_ATTEMPTS);
-        printf("Entrando em modo de hibernação e tentando novamente mais tarde...\n");
+        printf("Nao foi possivel conectar ao MQTT apos %d tentativas.\n", MAX_MQTT_CONNECT_ATTEMPTS);
+        printf("Entrando em hibernacao...\n");
         
         // Desativa LEDs antes de dormir
         HT_FSM_LedStatus(HT_BLUE_LED, LED_OFF);
@@ -529,12 +529,12 @@ void HT_Fsm(void) {
     // Led to sinalize connection stablished
     HT_LED_GreenLedTask(NULL);
 
-    printf("Executing fsm...\n");
+    printf("Executando FSM...\n");
 
     // Subscreve ao tópico de intervalo
-    printf("Subscribing to interval topic: '%s' with QoS 1\n", INTERVAL_TOPIC);
+    printf("Inscrevendo no topico: '%s' com QoS 1\n", INTERVAL_TOPIC);
     HT_MQTT_Subscribe(&mqttClient, INTERVAL_TOPIC, QOS1);
-    printf("Subscription request sent for interval topic\n");
+    printf("Inscricao enviada\n");
 
     // Usa o tick count do FreeRTOS para um controle de tempo mais preciso.
     TickType_t last_dht_read_time = xTaskGetTickCount();

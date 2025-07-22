@@ -31,7 +31,7 @@ void SenseClima_Init(void);
  * Após obter os dados ou após um número máximo de tentativas, publica
  * os valores ou uma mensagem de erro via MQTT.
  * 
- * @return void
+ * @return void                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
  */
 void SenseClima_PublishDHT22State(void);
 

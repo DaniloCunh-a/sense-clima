@@ -55,7 +55,7 @@
 #if MQTT_TLS_ENABLE == 1
 #define HT_MQTT_PORT   8883                               /**</ MQTT TCP TLS port. */
 #else
-#define HT_MQTT_PORT  10773 //1883                               /**</ MQTT TCP port. */
+#define HT_MQTT_PORT  1883                               /**</ MQTT TCP port. */
 #endif
 
 #define HT_MQTT_SEND_TIMEOUT 60000                        /**</ MQTT TX timeout. */

@@ -19,13 +19,13 @@
 #include "debug_log.h"
 #include "ps_lib_api.h"
 
-// Callbacks for sleep mode
+// Callbacks para modo de sono
 static void beforeHibernateCb(void *pdata, slpManLpState state) {
-    printf("[Callback] Antes de Hibernate\n");
+    printf("[Callback] Preparando para hibernacao\n");
 }
 
 static void afterHibernateCb(void *pdata, slpManLpState state) {
-    printf("[Callback] Acordou de Hibernate\n");
+    printf("[Callback] Sistema acordou da hibernacao\n");
 }
 
 void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms) {
@@ -34,14 +34,14 @@ void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms) {
     // Garante que todas as mensagens de log pendentes sejam enviadas antes de dormir
     uniLogFlushOut(0);
     
-    printf("\n=== Entrando em Modo Sono %d por %lu ms ===\n", state, sleep_ms);
+    printf("\n=== ENTRANDO EM MODO SONO %d POR %lu ms ===\n", state, sleep_ms);
     
-    // Desativa funções de celular e SIM para economizar energia
+    // Desativa funcoes de celular e SIM para economizar energia
     appSetCFUN(0);
     appSetEcSIMSleepSync(1);
     
     // Primeiro, configura o modo de sono
-    // Este comando é importante para inicializar o sistema para o sono
+    // Este comando e importante para inicializar o sistema para o sono
     slpManSetPmuSleepMode(true, state, false);
     
     // Configura o gerenciamento de sleep
@@ -49,7 +49,7 @@ void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms) {
         slpManApplyPlatVoteHandle("SLEEP_TEST", &voteHandle);
     }
     
-    // Registra callbacks para hibernação
+    // Registra callbacks para hibernacao
     slpManRegisterUsrdefinedBackupCb(beforeHibernateCb, NULL, SLPMAN_HIBERNATE_STATE);
     slpManRegisterUsrdefinedRestoreCb(afterHibernateCb, NULL, SLPMAN_HIBERNATE_STATE);
     
@@ -59,13 +59,13 @@ void HT_Sleep_EnterSleep(slpManSlpState_t state, uint32_t sleep_ms) {
     // Configura o timer de sono como fonte de wakeup
     slpManDeepSlpTimerStart(DEEPSLP_TIMER_ID7, sleep_ms);
     
-    // Espera passiva — o sistema deve entrar em sono automaticamente
-    // Esta é a abordagem usada no exemplo de referência
+    // Espera passiva - o sistema deve entrar em sono automaticamente
+    // Esta e a abordagem usada no exemplo de referencia
     while (1) {
         printf("Hibernando...\n");
-        osDelay(2000);  // após o tempo, sistema acorda e mensagens são exibidas
+        osDelay(2000);  // apos o tempo, sistema acorda e mensagens sao exibidas
     }
     
-    // O código abaixo nunca será executado
+    // O codigo abaixo nunca sera executado
 }
 /************************ HT Micron Semicondutores S.A *****END OF FILE****/
